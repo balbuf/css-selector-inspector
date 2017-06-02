@@ -44,7 +44,7 @@ selectors_group -> _ selector (_ "," _ selector):* _
 
 selector -> simple_selector_sequence (combinator simple_selector_sequence):* {% (d) => { return {type: 'selector', nodes: collectObjects(d)} } %}
 
-combinator -> ( _ [+>~] _ | __ ) {% (d) => { return {type: combinatorTypes[d[0][1] || ' ']} } %}
+combinator -> ( _ [+>~] _ | __ ) {% (d, location) => { return {type: combinatorTypes[d[0][1] || ' '], location} } %}
 
 simple_selector_sequence -> ( type_selector | universal ) simple_selector:*
 	| simple_selector:+
@@ -52,13 +52,13 @@ simple_selector_sequence -> ( type_selector | universal ) simple_selector:*
 simple_selector -> hash | class | attrib | pseudo | negation
 
 # selectors
-universal -> namespace_prefix:? "*" {% (d) => { return {type: 'universalSelector', namespace: d[0]} } %}
-type_selector -> namespace_prefix:? ident {% (d) => { return {type: 'typeSelector', namespace: d[0], name: d[1]} } %}
-hash -> "#" name {% (d) => { return {type: 'idSelector', name: d[1]} } %}
-class -> "." ident {% (d) => { return {type: 'classSelector', name: d[1]} } %}
+universal -> namespace_prefix:? "*" {% (d, location) => { return {type: 'universalSelector', namespace: d[0], location} } %}
+type_selector -> namespace_prefix:? ident {% (d, location) => { return {type: 'typeSelector', namespace: d[0], name: d[1], location} } %}
+hash -> "#" name {% (d, location) => { return {type: 'idSelector', name: d[1], location} } %}
+class -> "." ident {% (d, location) => { return {type: 'classSelector', name: d[1], location} } %}
 attrib -> "[" _ namespace_prefix:? ident _ ( [~|^$*]:? "=" _ ( ident | string ) ):? "]"
-	{% (d) => {
-		var obj = {namespace: d[2], name: d[3]};
+	{% (d, location) => {
+		var obj = {namespace: d[2], name: d[3], location};
 		if (d[5] && d[5].length) {
 			obj.type = 'attributeValueSelector';
 			obj.operator = (d[5][0] || '') + '=';
@@ -75,7 +75,7 @@ pseudo -> ":" ":":? ( ident | functional_pseudo )
 		if (pseudo.function === 'not') {
 			return reject;
 		}
-		var obj = {name: pseudo.function || pseudo};
+		var obj = {name: pseudo.function || pseudo, location};
 		// pseudo element?
 		if (d[1] || ['before', 'after', 'first-line', 'first-letter'].indexOf(pseudo) !== -1) {
 			obj.type = 'pseudoElementSelector';
@@ -85,7 +85,7 @@ pseudo -> ":" ":":? ( ident | functional_pseudo )
 		}
 		return obj;
 	} %}
-negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")" {% (d) => { return { type: 'negationSelector', selectors: d[6] }} %}
+negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")" {% (d, location) => { return {type: 'negationSelector', selectors: d[6], location} } %}
 
 # selector helpers
 namespace_prefix -> ( ident | "*" ):? "|" {% (d) => collapse(d[0]) %} # return just the namespace
