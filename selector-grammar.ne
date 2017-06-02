@@ -30,19 +30,19 @@ const combinatorTypes = {
 };
 %}
 
-selectors_group -> selector (_ "," _ selector):*
+selectors_group -> _ selector (_ "," _ selector):* _
 	{% (d) => {
-		var selectors = [ d[0] ];
+		var selectors = [ d[1] ];
 		// are there additional selectors?
-		if (d[1] && d[1].length) {
-			for (var i = 0; i < d[1].length; i++) {
-				selectors.push(d[1][i][3]);
+		if (d[2] && d[2].length) {
+			for (var i = 0; i < d[2].length; i++) {
+				selectors.push(d[2][i][3]);
 			}
 		}
-		return selectors;
+		return {type: 'selectorsGroup', selectors};
 	} %}
 
-selector -> simple_selector_sequence (combinator simple_selector_sequence):* {% collectObjects %}
+selector -> simple_selector_sequence (combinator simple_selector_sequence):* {% (d) => { return {type: 'selector', nodes: collectObjects(d)} } %}
 
 combinator -> ( _ [+>~] _ | __ ) {% (d) => { return {type: combinatorTypes[d[0][1] || ' ']} } %}
 
