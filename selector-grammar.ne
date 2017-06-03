@@ -2,6 +2,7 @@
 // collapse nested arrays of strings into a single concatenated string
 function collapse(d) {
 	if (typeof d === 'string') return d;
+	else if (d && typeof d.raw === 'string') return d.raw;
 	else if (!Array.isArray(d)) return '';
 
 	var out = '';
@@ -44,7 +45,7 @@ selectors_group -> _ selector (_ "," _ selector):* _
 
 selector -> simple_selector_sequence (combinator simple_selector_sequence):* {% (d) => { return {type: 'selector', nodes: collectObjects(d)} } %}
 
-combinator -> ( _ [+>~] _ | __ ) {% (d, location) => { return {type: combinatorTypes[d[0][1] || ' '], location} } %}
+combinator -> ( _ [+>~] _ | __ ) {% (d, location) => { return {type: combinatorTypes[d[0][1] || ' '], location, raw: collapse(d)} } %}
 
 simple_selector_sequence -> ( type_selector | universal ) simple_selector:*
 	| simple_selector:+
@@ -52,13 +53,13 @@ simple_selector_sequence -> ( type_selector | universal ) simple_selector:*
 simple_selector -> hash | class | attrib | pseudo | negation
 
 # selectors
-universal -> namespace_prefix:? "*" {% (d, location) => { return {type: 'universalSelector', namespace: d[0], location} } %}
-type_selector -> namespace_prefix:? ident {% (d, location) => { return {type: 'typeSelector', namespace: d[0], name: d[1], location} } %}
-hash -> "#" name {% (d, location) => { return {type: 'idSelector', name: d[1], location} } %}
-class -> "." ident {% (d, location) => { return {type: 'classSelector', name: d[1], location} } %}
+universal -> namespace_prefix:? "*" {% (d, location) => { return {type: 'universalSelector', namespace: d[0] ? d[0].name : d[0], location, raw: collapse(d)} } %}
+type_selector -> namespace_prefix:? ident {% (d, location) => { return {type: 'typeSelector', namespace: d[0] ? d[0].name : d[0], name: d[1], location, raw: collapse(d)} } %}
+hash -> "#" name {% (d, location) => { return {type: 'idSelector', name: d[1], location, raw: collapse(d)} } %}
+class -> "." ident {% (d, location) => { return {type: 'classSelector', name: d[1], location, raw: collapse(d)} } %}
 attrib -> "[" _ namespace_prefix:? ident _ ( [~|^$*]:? "=" _ ( ident | string ) ):? "]"
 	{% (d, location) => {
-		var obj = {namespace: d[2], name: d[3], location};
+		var obj = {namespace: d[2] ? d[2].name : d[2], name: d[3], location, raw: collapse(d)};
 		if (d[5] && d[5].length) {
 			obj.type = 'attributeValueSelector';
 			obj.operator = (d[5][0] || '') + '=';
@@ -75,7 +76,7 @@ pseudo -> ":" ":":? ( ident | functional_pseudo )
 		if (pseudo.function === 'not') {
 			return reject;
 		}
-		var obj = {name: pseudo.function || pseudo, location};
+		var obj = {name: pseudo.function || pseudo, location, raw: collapse(d)};
 		// pseudo element?
 		if (d[1] || ['before', 'after', 'first-line', 'first-letter'].indexOf(pseudo) !== -1) {
 			obj.type = 'pseudoElementSelector';
@@ -85,10 +86,10 @@ pseudo -> ":" ":":? ( ident | functional_pseudo )
 		}
 		return obj;
 	} %}
-negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")" {% (d, location) => { return {type: 'negationSelector', selectors: d[6], location} } %}
+negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")" {% (d, location) => { return {type: 'negationSelector', selectors: d[6], location, raw: collapse(d)} } %}
 
 # selector helpers
-namespace_prefix -> ( ident | "*" ):? "|" {% (d) => collapse(d[0]) %} # return just the namespace
+namespace_prefix -> ( ident | "*" ):? "|" {% (d) => { return {name: collapse(d[0]), raw: collapse(d)} } %} # return just the namespace
 functional_pseudo -> ident "(" _ expression ")" {% (d) => { return {function: d[0].toLowerCase(), expression: d[3].trim()} } %}
 negation_arg -> type_selector | universal | hash | class | attrib | pseudo
 expression -> ( ( "+" | "-" | dimension | num | string | ident ) _ ):+ {% collapse %}
@@ -109,5 +110,5 @@ string2 -> "'" ( [^\n\r\f\\'] | "\\" nl | nonascii | escape ):* "'"
 nl -> "\n" | "\r\n" | "\r" | "\f"
 dimension -> num ident
 space -> [ \n\r\t\f]
-_ -> space:* {% () => null %} # optional space
-__ -> space:+ {% () => ' ' %} # required space
+_ -> space:* # optional space
+__ -> space:+ # required space
