@@ -1,13 +1,19 @@
 @{%
-// collapse nested arrays of strings into a single concatenated string
-function collapse(d) {
+// collapse nested arrays of strings/objects into a single concatenated string
+function collapse(d, raw = false) {
 	if (typeof d === 'string') return d;
-	else if (d && typeof d.raw === 'string') return d.raw;
+	else if (d && raw && typeof d.raw === 'string') return d.raw;
+	else if (d && !raw && typeof d.parsed === 'string') return d.parsed;
 	else if (!Array.isArray(d)) return '';
 
 	var out = '';
-	for (var i = 0; i < d.length; i++) out += collapse(d[i]);
+	for (var i = 0; i < d.length; i++) out += collapse(d[i], raw);
 	return out;
+}
+
+// wrapper for clarity
+function collapseRaw(d) {
+	return collapse(d, true);
 }
 
 // collect nested arrays of objects into a flat array
@@ -43,27 +49,32 @@ selectors_group -> _ selector (_ "," _ selector):* _
 		return {type: 'selectorsGroup', selectors};
 	} %}
 
-selector -> simple_selector_sequence (combinator simple_selector_sequence):* {% (d) => { return {type: 'selector', nodes: collectObjects(d)} } %}
+selector -> simple_selector_sequence (combinator simple_selector_sequence):*
+	{% (d) => { return {type: 'selector', nodes: collectObjects(d)} } %}
 
-combinator -> ( _ [+>~] _ | __ ) {% (d, location) => { return {type: combinatorTypes[d[0][1] || ' '], location, raw: collapse(d)} } %}
+combinator -> ( _ [+>~] _ | __ )
+	{% (d, location) => { return {type: combinatorTypes[d[0][1] || ' '], location, raw: collapseRaw(d)} } %}
 
-simple_selector_sequence -> ( type_selector | universal ) simple_selector:*
-	| simple_selector:+
+simple_selector_sequence -> ( type_selector | universal ) simple_selector:* | simple_selector:+
 
 simple_selector -> hash | class | attrib | pseudo | negation
 
 # selectors
-universal -> namespace_prefix:? "*" {% (d, location) => { return {type: 'universalSelector', namespace: d[0] ? d[0].name : d[0], location, raw: collapse(d)} } %}
-type_selector -> namespace_prefix:? ident {% (d, location) => { return {type: 'typeSelector', namespace: d[0] ? d[0].name : d[0], name: d[1], location, raw: collapse(d)} } %}
-hash -> "#" name {% (d, location) => { return {type: 'idSelector', name: d[1], location, raw: collapse(d)} } %}
-class -> "." ident {% (d, location) => { return {type: 'classSelector', name: d[1], location, raw: collapse(d)} } %}
+universal -> namespace_prefix:? "*"
+	{% (d, location) => { return {type: 'universalSelector', namespace: d[0] ? d[0].name : d[0], location, raw: collapseRaw(d)} } %}
+type_selector -> namespace_prefix:? ident
+	{% (d, location) => { return {type: 'typeSelector', namespace: d[0] ? d[0].name : d[0], name: collapse(d[1]), location, raw: collapseRaw(d)} } %}
+hash -> "#" name
+	{% (d, location) => { return {type: 'idSelector', name: collapse(d[1]), location, raw: collapseRaw(d)} } %}
+class -> "." ident
+	{% (d, location) => { return {type: 'classSelector', name: collapse(d[1]), location, raw: collapseRaw(d)} } %}
 attrib -> "[" _ namespace_prefix:? ident _ ( [~|^$*]:? "=" _ ( ident | string ) ):? "]"
 	{% (d, location) => {
-		var obj = {namespace: d[2] ? d[2].name : d[2], name: d[3], location, raw: collapse(d)};
+		var obj = {namespace: d[2] ? d[2].name : d[2], name: collapse(d[3]), location, raw: collapseRaw(d)};
 		if (d[5] && d[5].length) {
 			obj.type = 'attributeValueSelector';
 			obj.operator = (d[5][0] || '') + '=';
-			obj.value = d[5][3][0]; // @todo: this is raw and needs to be parsed
+			obj.value = collapse(d[5][3][0]);
 		} else {
 			obj.type = 'attributePresenceSelector';
 		}
@@ -71,42 +82,58 @@ attrib -> "[" _ namespace_prefix:? ident _ ( [~|^$*]:? "=" _ ( ident | string ) 
 	} %}
 pseudo -> ":" ":":? ( ident | functional_pseudo )
 	{% (d, location, reject) => {
-		var pseudo = typeof d[2][0] === 'string' ? d[2][0].toLowerCase() : d[2][0];
 		// reject :not()
-		if (pseudo.function === 'not') {
+		if (d[2][0].function === 'not') {
 			return reject;
 		}
-		var obj = {name: pseudo.function || pseudo, location, raw: collapse(d)};
+		var obj = {name: d[2][0].function || collapse(d[2][0]), location, raw: collapseRaw(d)};
 		// pseudo element?
-		if (d[1] || ['before', 'after', 'first-line', 'first-letter'].indexOf(pseudo) !== -1) {
+		if (d[1] || ['before', 'after', 'first-line', 'first-letter'].indexOf(obj.name) !== -1) {
+			// pseudo elements should not have a function
+			if (d[2][0].function) {
+				return reject;
+			}
 			obj.type = 'pseudoElementSelector';
 		} else {
 			obj.type = 'pseudoClassSelector';
-			obj.expression = pseudo.expression || null;
+			obj.expression = d[2][0].expression || null;
+			obj.expressionRaw = d[2][0].expressionRaw || null;
 		}
 		return obj;
 	} %}
-negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")" {% (d, location) => { return {type: 'negationSelector', selectors: d[6], location, raw: collapse(d)} } %}
+negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")"
+	{% (d, location) => { return {type: 'negationSelector', selectors: d[6], location, raw: collapseRaw(d)} } %}
 
 # selector helpers
-namespace_prefix -> ( ident | "*" ):? "|" {% (d) => { return {name: collapse(d[0]), raw: collapse(d)} } %} # return just the namespace
-functional_pseudo -> ident "(" _ expression ")" {% (d) => { return {function: d[0].toLowerCase(), expression: d[3].trim()} } %}
+namespace_prefix -> ( ident | "*" ):? "|"
+	{% (d) => { return {name: collapse(d[0]), raw: collapseRaw(d)} } %}
+functional_pseudo -> ident "(" _ expression _ ")"
+	{% (d) => { return {function: collapse(d[0]).toLowerCase(), expression: collapse(d[3]), raw: collapseRaw(d), expressionRaw: collapseRaw(d[3])} } %}
 negation_arg -> type_selector | universal | hash | class | attrib | pseudo
-expression -> ( ( "+" | "-" | dimension | num | string | ident ) _ ):+ {% collapse %}
+expression -> string | ident | nth
 
 # patterns
-ident -> "-":? nmstart nmchar:* {% collapse %}
-name -> nmchar:+ {% collapse %}
+ident -> "-":? nmstart nmchar:*
+name -> nmchar:+
 nmstart -> [_a-zA-Z] | nonascii | escape
 nonascii -> [^\0-\177]
-unicode -> "\\" hexchar hexchar:? hexchar:? hexchar:? hexchar:? hexchar:? ( "\r\n" | space ):?
-escape -> unicode | "\\" [^\n\r\f0-9a-fA-F]
+unicode -> "\\" ( hexchar hexchar:? hexchar:? hexchar:? hexchar:? hexchar:? ) ( "\r\n" | space ):?
+	{% (d) => { return {parsed: String.fromCodePoint(collapse(d[1])), raw: collapse(d)} } %}
+escape -> unicode
+	| "\\" [^\n\r\f0-9a-fA-F] {% (d) => { return {parsed: d[1], raw: collapseRaw(d)} } %}
+escaped_nl -> "\\" nl
+	{% (d) => { return {parsed: d[1], raw: collapseRaw(d)} } %}
 nmchar -> [_a-zA-Z0-9-] | nonascii | escape
 num -> [0-9]:+ | [0-9]:* "." [0-9]:+
+int -> [0-9]:+
+nth -> ( [+-]:? int:? [nN] ( _ [+-] _ int ):? | [+-]:? int )
+	{% (d) => { return {parsed: collapse(d).replace(/[ \n\r\t\f]+/g, ''), raw: collapseRaw(d)} } %}
 hexchar -> [0-9a-fA-F]
-string -> ( string1 | string2 ) {% collapse %}
-string1 -> "\"" ( [^\n\r\f\\"] | "\\" nl | nonascii | escape ):* "\""
-string2 -> "'" ( [^\n\r\f\\'] | "\\" nl | nonascii | escape ):* "'"
+string -> ( string1 | string2 ) {% (d) => d[0][0] %}
+string1 -> "\"" ( [^\n\r\f\\"] | escaped_nl | nonascii | escape ):* "\""
+	{% (d) => { return {parsed: collapse(d[1]), raw: collapseRaw(d)} } %}
+string2 -> "'" ( [^\n\r\f\\'] | escaped_nl | nonascii | escape ):* "'"
+	{% (d) => { return {parsed: collapse(d[1]), raw: collapseRaw(d)} } %}
 nl -> "\n" | "\r\n" | "\r" | "\f"
 dimension -> num ident
 space -> [ \n\r\t\f]
