@@ -119,7 +119,7 @@ name -> nmchar:+
 nmstart -> [_a-zA-Z] | nonascii | escape
 nonascii -> [^\0-\177]
 unicode -> "\\" ( hexchar hexchar:? hexchar:? hexchar:? hexchar:? hexchar:? ) ( "\r\n" | space ):?
-	{% (d) => { return {parsed: String.fromCodePoint(collapse(d[1])), raw: collapse(d)} } %}
+	{% (d) => { return {parsed: String.fromCodePoint(parseInt(collapse(d[1]), 16)), raw: collapse(d)} } %}
 escape -> unicode
 	| "\\" [^\n\r\f0-9a-fA-F] {% (d) => { return {parsed: d[1], raw: collapseRaw(d)} } %}
 escaped_nl -> "\\" nl
