@@ -37,6 +37,7 @@ const combinatorTypes = {
 };
 %}
 
+# @see: https://www.w3.org/TR/css3-selectors/#w3cselgrammar
 selectors_group -> _ selector (_ "," _ selector):* _
 	{% (d) => {
 		var selectors = [ d[1] ];
@@ -126,6 +127,7 @@ escaped_nl -> "\\" nl
 nmchar -> [_a-zA-Z0-9-] | nonascii | escape
 num -> [0-9]:+ | [0-9]:* "." [0-9]:+
 int -> [0-9]:+
+# @see: https://www.w3.org/TR/css3-selectors/#nth-child-pseudo
 nth -> ( [+-]:? int:? [nN] ( _ [+-] _ int ):? | [+-]:? int )
 	{% (d) => { return {parsed: collapse(d).replace(/[ \n\r\t\f]+/g, ''), raw: collapseRaw(d)} } %}
 hexchar -> [0-9a-fA-F]
