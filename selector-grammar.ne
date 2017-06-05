@@ -133,7 +133,7 @@ ident -> "-":? nmstart nmchar:*
 name -> nmchar:+
 nmstart -> [_a-zA-Z] | nonascii | escape
 nonascii -> [^\0-\177]
-unicode -> "\\" ( hexchar hexchar:? hexchar:? hexchar:? hexchar:? hexchar:? ) ( "\r\n" | space ):?
+unicode -> "\\" ( hex hex:? hex:? hex:? hex:? hex:? ) ( "\r\n" | space ):?
 	{% (d) => { return {parsed: String.fromCodePoint(parseInt(collapse(d[1]), 16)), raw: collapse(d)} } %}
 escape -> unicode
 	| "\\" [^\n\r\f0-9a-fA-F] {% (d) => { return {parsed: d[1], raw: collapseRaw(d)} } %}
@@ -145,7 +145,7 @@ int -> [0-9]:+
 # @see: https://www.w3.org/TR/css3-selectors/#nth-child-pseudo
 nth -> ( [+-]:? int:? [nN] ( _ [+-] _ int ):? | [+-]:? int )
 	{% (d) => { return {parsed: collapse(d).replace(/[ \n\r\t\f]+/g, ''), raw: collapseRaw(d)} } %}
-hexchar -> [0-9a-fA-F]
+hex -> [0-9a-fA-F]
 string -> ( string1 | string2 ) {% (d) => d[0][0] %}
 string1 -> "\"" ( [^\n\r\f\\"] | escaped_nl | nonascii | escape ):* "\""
 	{% (d) => { return {parsed: collapse(d[1]), raw: collapseRaw(d)} } %}
