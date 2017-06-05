@@ -69,7 +69,7 @@ selector -> simple_selector_sequence (combinator simple_selector_sequence):*
 combinator -> ( _ [+>~] _ | __ )
 	{% (d, location) => { return {type: combinatorTypes[d[0][1] || ' '], location, raw: collapseRaw(d), specificityType: null} } %}
 
-simple_selector_sequence -> ( type_selector | universal ) simple_selector:* | simple_selector:+
+simple_selector_sequence -> ( type_selector | universal | simple_selector ) ( comment:? simple_selector ):*
 
 simple_selector -> hash | class | attrib | pseudo | negation
 
@@ -154,5 +154,6 @@ string2 -> "'" ( [^\n\r\f\\'] | escaped_nl | nonascii | escape ):* "'"
 nl -> "\n" | "\r\n" | "\r" | "\f"
 dimension -> num ident
 space -> [ \n\r\t\f]
-_ -> space:* # optional space
-__ -> space:+ # required space
+_ -> ( comment:? space ):* comment:? # optional space
+__ -> ( comment:? space ):+ comment:? # required space
+comment -> "/*" [^*]:* "*":+ ([^*\/] [^*]:* "*":+):* "/"
