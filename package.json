@@ -1,0 +1,30 @@
+{
+  "name": "css-selector-inspector",
+  "version": "0.34.0",
+  "description": "Parse, validate, and inspect CSS selectors",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile-grammar": "nearleyc src/selector-grammar.ne -o src/selector-grammar.js",
+    "build": "npm run compile-grammar && babel src -d dist"
+  },
+  "keywords": [
+    "CSS",
+    "selector",
+    "parser",
+    "specificity"
+  ],
+  "author": "balbuf",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balbuf/css-selector-inspector"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "nearley": "^2.9.3"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-preset-env": "^1.5.1"
+  }
+}
