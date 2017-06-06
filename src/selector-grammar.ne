@@ -51,20 +51,7 @@ selectors_group -> _ selector (_ "," _ selector):* _
 	} %}
 
 selector -> simple_selector_sequence (combinator simple_selector_sequence):*
-	{% (d) => {
-		var nodes = collectObjects(d)
-		  , specificity = {a: 0, b: 0, c: 0, d: 0}
-		;
-
-		// calculate the specificity @see: https://www.w3.org/TR/2009/CR-CSS2-20090908/cascade.html#specificity
-		for (var i = 0; i < nodes.length; i++) {
-			if (nodes[i].specificityType) {
-				specificity[nodes[i].specificityType]++;
-			}
-		}
-
-		return {type: 'selector', nodes, specificity};
-	} %}
+	{% (d) => { return {type: 'selector', nodes: collectObjects(d)} } %}
 
 combinator -> ( _ [+>~] _ | __ )
 	{% (d, location) => { return {type: combinatorTypes[d[0][1] || ' '], location, raw: collapseRaw(d), specificityType: null} } %}
