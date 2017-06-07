@@ -2,11 +2,14 @@
  * CSS Selector object
  */
 
-const originTypes = [ 'author', 'user', 'userAgent' ];
-
 class Selector {
 
-	constructor(tokens, origin = 'author') {
+	/**
+	 * Constructor
+	 *
+	 * @param  {Object} tokens  object with type: 'selector' and array of nodes
+	 */
+	constructor(tokens) {
 		if (typeof tokens !== 'object' || tokens.type !== 'selector' || !tokens.nodes || !tokens.nodes.length) {
 			throw new TypeError('Selector should be constructed with a proper parsed token object.');
 		}
@@ -23,18 +26,7 @@ class Selector {
 			}
 		}
 
-		Object.assign(this, {tokens, origin, specificity, important: false});
-	}
-
-	set origin(origin) {
-		if (originTypes.indexOf(origin) === -1) {
-			throw new Error(`Origin should be one of: ${originTypes.join(', ')}`);
-		}
-		this._origin = origin;
-	}
-
-	get origin() {
-		return this._origin;
+		Object.assign(this, {tokens, specificity});
 	}
 
 }
