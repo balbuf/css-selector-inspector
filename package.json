@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile-grammar": "nearleyc src/selector-grammar.ne -o src/selector-grammar.js",
     "build": "npm run compile-grammar && babel src -d dist",
-    "prepublish": "npm run build"
+    "prepare": "npm run build"
   },
   "keywords": [
     "CSS",

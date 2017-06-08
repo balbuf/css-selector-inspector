@@ -51,7 +51,7 @@ selectors_group -> _ selector (_ "," _ selector):* _
 	} %}
 
 selector -> simple_selector_sequence (combinator simple_selector_sequence):*
-	{% (d) => { return {type: 'selector', nodes: collectObjects(d)} } %}
+	{% (d) => { return {type: 'selector', tokens: collectObjects(d)} } %}
 
 combinator -> ( _ [+>~] _ | __ )
 	{% (d, location) => { return {type: combinatorTypes[d[0][1] || ' '], location, raw: collapseRaw(d), specificityType: null} } %}
@@ -99,13 +99,14 @@ pseudo -> ":" ":":? ( ident | functional_pseudo )
 		} else {
 			obj.type = 'pseudoClassSelector';
 			obj.specificityType = 'c';
+			// @todo: expression should be a token
 			obj.expression = d[2][0].expression || null;
 			obj.expressionRaw = d[2][0].expressionRaw || null;
 		}
 		return obj;
 	} %}
 negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")"
-	{% (d, location) => { return {type: 'negationSelector', selectors: d[6], location, raw: collapseRaw(d), specificityType: null} } %}
+	{% (d, location) => { return {type: 'negationSelector', tokens: d[6], location, raw: collapseRaw(d), specificityType: null} } %}
 
 # selector helpers
 namespace_prefix -> ( ident | "*" ):? "|"

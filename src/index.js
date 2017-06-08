@@ -32,7 +32,7 @@ export default {
 			}
 		}
 
-		return results[0].selectors.map((tokens) => new Selector(tokens));
+		return results[0].selectors.map((selector) => new Selector(selector.tokens));
 	},
 
 	/**
