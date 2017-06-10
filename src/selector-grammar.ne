@@ -140,7 +140,6 @@ string1 -> "\"" ( [^\n\r\f\\"] | escaped_nl | nonascii | escape ):* "\""
 string2 -> "'" ( [^\n\r\f\\'] | escaped_nl | nonascii | escape ):* "'"
 	{% (d) => { return {parsed: collapse(d[1]), raw: collapseRaw(d)} } %}
 nl -> "\n" | "\r\n" | "\r" | "\f"
-dimension -> num ident
 space -> [ \n\r\t\f]
 _ -> ( comment:? space ):* comment:? # optional space
 __ -> ( comment:? space ):+ comment:? # required space
