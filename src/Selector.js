@@ -1,3 +1,5 @@
+import CSS from './escape';
+
 /**
  * CSS Selector object
  */
@@ -82,8 +84,7 @@ class Selector {
 					return '[' + CSS.escape(token.name) + ']';
 
 				case 'attributeValueSelector':
-					// @todo: CSS.escape escapes more than necessary for strings
-					return `[${CSS.escape(token.name)}${token.operator}"${CSS.escape(token.value)}"]`;
+					return '[' + CSS.escape(token.name) + token.operator + CSS.escapeString(token.value) + ']';
 
 				case 'pseudoElementSelector':
 					// no escape necessary since only identities are allowed
@@ -104,6 +105,7 @@ class Selector {
 	 * @return {String} selector string
 	 */
 	toString() {
+		// cache the selector string
 		if (!this.selectorString) {
 			this.selectorString = Selector.tokensToString(this.tokens);
 		}

@@ -2,6 +2,7 @@ import { Parser } from 'nearley';
 import grammar from './selector-grammar';
 import Selector from './Selector';
 import PropertyTest from './PropertyTest';
+import { escape, escapeString } from './escape';
 
 export default {
 
@@ -119,5 +120,9 @@ export default {
 		// reassemble original array based on the sorted state of the mapping
 		return mapped.map((item) => arr[item.index]);
 	},
+
+	// escape methods
+	escape,
+	escapeString,
 
 };
