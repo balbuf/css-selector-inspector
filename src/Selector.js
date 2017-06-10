@@ -57,7 +57,7 @@ class Selector {
 	 * @return {String}        selector string
 	 */
 	static tokensToString(tokens) {
-		return tokens.reduce((str, token) => {
+		return tokens.map((token) => {
 			switch (token.type) {
 				case 'adjacentSiblingCombinator':
 					return ' + ';
@@ -97,7 +97,7 @@ class Selector {
 				case 'negationSelector':
 					return ':not(' + this.tokensToString(token.tokens) + ')';
 			}
-		}, '');
+		}).join('');
 	}
 
 	/**
