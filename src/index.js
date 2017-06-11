@@ -2,7 +2,7 @@ import { Parser } from 'nearley';
 import grammar from './selector-grammar';
 import Selector from './Selector';
 import PropertyTest from './PropertyTest';
-import { escape, escapeString } from './escape';
+import CSS from './escape';
 
 export default {
 
@@ -20,6 +20,12 @@ export default {
 		var parser = new Parser(grammar.ParserRules, grammar.ParserStart)
 		  , results = parser.feed(selector).results
 		;
+
+		// usually a parse error is thrown by nearley, unless there are no results due to
+		// a postprocessor function rejecting a match
+		if (results.length === 0) {
+			throw new Error('Invalid selector.');
+		}
 
 		// are there ambiguous results?
 		if (results.length > 1) {
@@ -122,7 +128,7 @@ export default {
 	},
 
 	// escape methods
-	escape,
-	escapeString,
+	escape: CSS.escape,
+	escapeString: CSS.escapeString,
 
 };

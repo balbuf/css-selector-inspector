@@ -87,6 +87,10 @@ pseudo -> ":" ":":? ( ident | functional_pseudo )
 		if (d[2][0].function === 'not') {
 			return reject;
 		}
+		// check validity of expression for nth type function
+		if (/^nth/.test(d[2][0].function) && (!d[2][0].expression || !/^nth/.test(d[2][0].expression.type))) {
+			return reject;
+		}
 		var obj = {name: d[2][0].function || collapse(d[2][0]), location, raw: collapseRaw(d)};
 		// pseudo element?
 		if (d[1] || ['before', 'after', 'first-line', 'first-letter'].indexOf(obj.name) !== -1) {
@@ -99,9 +103,7 @@ pseudo -> ":" ":":? ( ident | functional_pseudo )
 		} else {
 			obj.type = 'pseudoClassSelector';
 			obj.specificityType = 'c';
-			// @todo: expression should be a token
 			obj.expression = d[2][0].expression || null;
-			obj.expressionRaw = d[2][0].expressionRaw || null;
 		}
 		return obj;
 	} %}
@@ -112,9 +114,10 @@ negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")"
 namespace_prefix -> ( ident | "*" ):? "|"
 	{% (d) => { return {name: collapse(d[0]), raw: collapseRaw(d)} } %}
 functional_pseudo -> ident "(" _ expression _ ")"
-	{% (d) => { return {function: collapse(d[0]).toLowerCase(), expression: collapse(d[3]), raw: collapseRaw(d), expressionRaw: collapseRaw(d[3])} } %}
+	{% (d) => { return {function: collapse(d[0]).toLowerCase(), expression: d[3], raw: collapseRaw(d)} } %}
 negation_arg -> type_selector | universal | hash | class | attrib | pseudo
-expression -> string | ident | nth
+expression -> string {% id %} | nth {% id %}
+	| ident {% (d) => { return {type: 'identity', parsed: collapse(d), raw: collapseRaw(d)} } %}
 
 # patterns
 ident -> "-":? nmstart nmchar:*
@@ -131,14 +134,24 @@ nmchar -> [_a-zA-Z0-9-] | nonascii | escape
 num -> [0-9]:+ | [0-9]:* "." [0-9]:+
 int -> [0-9]:+
 # @see: https://www.w3.org/TR/css3-selectors/#nth-child-pseudo
-nth -> ( [+-]:? int:? [nN] ( _ [+-] _ int ):? | [+-]:? int )
-	{% (d) => { return {parsed: collapse(d).replace(/[ \n\r\t\f]+/g, ''), raw: collapseRaw(d)} } %}
+nth -> [+-]:? int:? [nN] ( _ [+-] _ int ):?
+	{% (d) => {
+		return {
+			type: 'nthFormula',
+			parsed: {a: parseInt((d[0] || '') + (d[1] || '1')), b: d[3] ? parseInt((d[3][1] || '') + d[3][3]) : 0},
+			raw: collapseRaw(d),
+		};
+	} %}
+	| [+-]:? int
+		{% (d) => { return {type: 'nthFormula', parsed: {a: 0, b: parseInt((d[0] || '') + d[1])}, raw: collapseRaw(d)} } %}
+	| ( [oO] [dD] [dD] | [eE] [vV] [eE] [nN] )
+		{% (d) => { return {type: 'nthKeyword', parsed: collapse(d).toLowerCase(), raw: collapseRaw(d)} } %}
 hex -> [0-9a-fA-F]
 string -> ( string1 | string2 ) {% (d) => d[0][0] %}
 string1 -> "\"" ( [^\n\r\f\\"] | escaped_nl | nonascii | escape ):* "\""
-	{% (d) => { return {parsed: collapse(d[1]), raw: collapseRaw(d)} } %}
+	{% (d) => { return {type: 'string', parsed: collapse(d[1]), raw: collapseRaw(d)} } %}
 string2 -> "'" ( [^\n\r\f\\'] | escaped_nl | nonascii | escape ):* "'"
-	{% (d) => { return {parsed: collapse(d[1]), raw: collapseRaw(d)} } %}
+	{% (d) => { return {type: 'string', parsed: collapse(d[1]), raw: collapseRaw(d)} } %}
 nl -> "\n" | "\r\n" | "\r" | "\f"
 space -> [ \n\r\t\f]
 _ -> ( comment:? space ):* comment:? # optional space

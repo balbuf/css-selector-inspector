@@ -91,8 +91,43 @@ class Selector {
 					return '::' + token.name;
 
 				case 'pseudoClassSelector':
-					// @todo: get away from using raw expression
-					return ':' + token.name + (typeof token.expressionRaw === 'string' ? '(' + token.expressionRaw + ')' : '');
+					var expression = '';
+					if (token.expression) {
+						switch (token.expression.type) {
+							case 'identity':
+								expression = CSS.escape(token.expression.parsed);
+								break;
+
+							case 'string':
+								expression = CSS.escapeString(token.expression.parsed);
+								break;
+
+							case 'nthKeyword':
+								expression = token.expression.parsed;
+								break;
+
+							case 'nthFormula':
+								if (token.expression.parsed.a) {
+									if (Math.abs(token.expression.parsed.a) === 1) {
+										// omit the number
+										expression = token.expression.parsed.a < 0 ? '-n' : 'n';
+									} else {
+										expression = token.expression.parsed.a + 'n';
+									}
+								}
+								// if there is a b component, or there was no a component
+								if (token.expression.parsed.b || !expression) {
+									// add an explicit plus sign if there was an a component and b is positive
+									if (token.expression.parsed.b > 0 && expression) {
+										expression += '+';
+									}
+									expression += token.expression.parsed.b;
+								}
+								break;
+						}
+						expression = expression && ('(' + expression + ')');
+					}
+					return ':' + token.name + expression;
 
 				case 'negationSelector':
 					return ':not(' + this.tokensToString(token.tokens) + ')';
