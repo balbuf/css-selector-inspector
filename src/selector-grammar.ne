@@ -142,12 +142,12 @@ nth -> [+-]:? int:? [nN] ( _ [+-] _ int ):?
 	{% (d) => {
 		return {
 			type: 'nthFormula',
-			parsed: {a: parseInt((d[0] || '') + (d[1] || '1')), b: d[3] ? parseInt((d[3][1] || '') + d[3][3]) : 0},
+			parsed: {a: parseInt((d[0] || '') + (collapse(d[1]) || '1'), 10), b: d[3] ? parseInt((d[3][1] || '') + collapse(d[3][3]), 10) : 0},
 			raw: collapseRaw(d),
 		};
 	} %}
 	| [+-]:? int
-		{% (d) => { return {type: 'nthFormula', parsed: {a: 0, b: parseInt((d[0] || '') + d[1])}, raw: collapseRaw(d)} } %}
+		{% (d) => { return {type: 'nthFormula', parsed: {a: 0, b: parseInt((d[0] || '') + collapse(d[1]), 10)}, raw: collapseRaw(d)} } %}
 	| ( [oO] [dD] [dD] | [eE] [vV] [eE] [nN] )
 		{% (d) => { return {type: 'nthKeyword', parsed: collapse(d).toLowerCase(), raw: collapseRaw(d)} } %}
 hex -> [0-9a-fA-F]
