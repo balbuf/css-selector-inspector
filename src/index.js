@@ -168,6 +168,21 @@ export default {
 		return mapped.map((item) => arr[item.index]);
 	},
 
+	/**
+	 * Normalize a selector string by parsing and reassembling.
+	 * Removes extraneous whitespace, unencodes unnecessary unicode escapes,
+	 * removes comments, normalizes nth formulas.
+	 *
+	 * This idea could be expanded upon to sort simple selectors and even
+	 * standardize a preference between identical selectors, e.g. :first-child and :nth-child(1).
+	 *
+	 * @param  {String} selector selector string
+	 * @return {String}          normalized selector string
+	 */
+	normalize(selector) {
+		return this.parse(selector).map((s) => s.toString()).join(', ');
+	},
+
 	// escape methods
 	escape: CSS.escape,
 	escapeString: CSS.escapeString,
