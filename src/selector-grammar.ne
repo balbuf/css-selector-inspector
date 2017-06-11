@@ -66,16 +66,16 @@ simple_selector -> hash | class | attrib | pseudo | negation
 
 # selectors
 universal -> namespace_prefix:? "*"
-	{% (d, location) => { return {type: 'universalSelector', namespace: d[0] ? d[0].name : d[0], location, raw: collapseRaw(d), specificityType: null} } %}
+	{% (d, location) => { return {type: 'universalSelector', namespace: d[0] ? d[0].parsed : null, location, raw: collapseRaw(d), specificityType: null} } %}
 type_selector -> namespace_prefix:? ident
-	{% (d, location) => { return {type: 'typeSelector', namespace: d[0] ? d[0].name : d[0], name: collapse(d[1]), location, raw: collapseRaw(d), specificityType: 'd'} } %}
+	{% (d, location) => { return {type: 'typeSelector', namespace: d[0] ? d[0].parsed : null, name: collapse(d[1]), location, raw: collapseRaw(d), specificityType: 'd'} } %}
 hash -> "#" name
 	{% (d, location) => { return {type: 'idSelector', name: collapse(d[1]), location, raw: collapseRaw(d), specificityType: 'b'} } %}
 class -> "." ident
 	{% (d, location) => { return {type: 'classSelector', name: collapse(d[1]), location, raw: collapseRaw(d), specificityType: 'c'} } %}
 attrib -> "[" _ namespace_prefix:? ident _ ( [~|^$*]:? "=" _ ( ident | string ) ):? "]"
 	{% (d, location) => {
-		var obj = {namespace: d[2] ? d[2].name : d[2], name: collapse(d[3]), location, raw: collapseRaw(d), specificityType: 'c'};
+		var obj = {namespace: d[2] ? d[2].parsed : null, name: collapse(d[3]), location, raw: collapseRaw(d), specificityType: 'c'};
 		if (d[5] && d[5].length) {
 			obj.type = 'attributeValueSelector';
 			obj.operator = (d[5][0] || '') + '=';
@@ -116,7 +116,7 @@ negation -> ":" [nN] [oO] [tT] "(" _ negation_arg _ ")"
 
 # selector helpers
 namespace_prefix -> ( ident | "*" ):? "|"
-	{% (d) => { return {name: collapse(d[0]), raw: collapseRaw(d)} } %}
+	{% (d) => { return {parsed: d[0][0] === '*' ? {type: 'wildcard'} : collapse(d[0]), raw: collapseRaw(d) } } %}
 functional_pseudo -> ident "(" _ expression _ ")"
 	{% (d) => { return {function: collapse(d[0]).toLowerCase(), expression: d[3], raw: collapseRaw(d)} } %}
 negation_arg -> type_selector | universal | hash | class | attrib | pseudo

@@ -73,18 +73,17 @@ class Selector {
 
 				case 'universalSelector':
 				case 'typeSelector':
-					return (typeof token.namespace === 'string' ? CSS.escape(token.namespace) + '|' : '') +
-						(token.type === 'universalSelector' ? '*' : CSS.escape(token.name));
+					return namespaceString(token) + (token.type === 'universalSelector' ? '*' : CSS.escape(token.name));
 
 				case 'idSelector':
 				case 'classSelector':
 					return (token.type === 'idSelector' ? '#' : '.') + CSS.escape(token.name);
 
 				case 'attributePresenceSelector':
-					return '[' + CSS.escape(token.name) + ']';
+					return '[' + namespaceString(token) + CSS.escape(token.name) + ']';
 
 				case 'attributeValueSelector':
-					return '[' + CSS.escape(token.name) + token.operator + CSS.escapeString(token.value) + ']';
+					return '[' + namespaceString(token) + CSS.escape(token.name) + token.operator + CSS.escapeString(token.value) + ']';
 
 				case 'pseudoElementSelector':
 					// no escape necessary since only identities are allowed
@@ -148,6 +147,15 @@ class Selector {
 		return this.selectorString;
 	}
 
+}
+
+function namespaceString(token) {
+	if (typeof token.namespace === 'string') {
+		return CSS.escape(token.namespace) + '|';
+	} else if (typeof token.namespace === 'object' && token.namespace !== null && token.namespace.type === 'wildcard') {
+		return '*|';
+	}
+	return '';
 }
 
 export default Selector;
