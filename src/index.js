@@ -4,6 +4,24 @@ import Selector from './Selector';
 import PropertyTest from './PropertyTest';
 import CSS from './escape';
 
+/**
+ * Using the location and additional offset of unicode escape tokens,
+ * fix the location values for parsed selector tokens.
+ *
+ * @param  {Array} tokens
+ * @param  {Array} unicodeLocations  location and offset of each unicode escape
+ */
+function fixLocation(tokens, unicodeLocations) {
+	for (var i = 0; i < tokens.length; i++) {
+		if (tokens[i].location) {
+			tokens[i].location += unicodeLocations.filter((l) => l.index < tokens[i].location).reduce((offset, l) => offset + l.offset, 0);
+		}
+		if (Array.isArray(tokens[i].tokens)) {
+			fixLocation(tokens[i].tokens, unicodeLocations);
+		}
+	}
+}
+
 export default {
 
 	// classes
@@ -17,8 +35,26 @@ export default {
 	 * @return {array}          Selector object(s)
 	 */
 	parse(selector) {
+		// tokenize the input string
+		// (the only special tokens are unicode escapes, which need to be matched greedily to avoid ambiguous results)
+		var tokens = []
+		  , unicodeReg = /\\[0-9a-zA-Z]{1,6}(?:\r\n|[ \n\r\t\f])?/g
+		  , lastIndex = 0
+		  , result
+		  , unicodeLocations = [] // keep track of where unicode tokens are to fix the "location" values of selector tokens
+		;
+
+		// find all the unicode escapes, split everything else into individual chars
+		while ((result = unicodeReg.exec(selector)) !== null) {
+			Array.prototype.push.apply(tokens, selector.substr(lastIndex, result.index).split(''));
+			unicodeLocations.push({index: tokens.length, offset: result[0].length - 1});
+			tokens.push(result[0]);
+			lastIndex = unicodeReg.lastIndex;
+		}
+		Array.prototype.push.apply(tokens, selector.substr(lastIndex).split(''));
+
 		var parser = new Parser(grammar.ParserRules, grammar.ParserStart)
-		  , results = parser.feed(selector).results
+		  , results = parser.feed(tokens).results
 		;
 
 		// usually a parse error is thrown by nearley, unless there are no results due to
@@ -39,7 +75,12 @@ export default {
 			}
 		}
 
-		return results[0].selectors.map((selector) => new Selector(selector.tokens));
+		return results[0].selectors.map((selector) => {
+			if (unicodeLocations.length) {
+				fixLocation(selector.tokens, unicodeLocations);
+			}
+			return new Selector(selector.tokens);
+		});
 	},
 
 	/**

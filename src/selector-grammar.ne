@@ -35,6 +35,10 @@ const combinatorTypes = {
 	'~': 'generalSiblingCombinator',
 	' ': 'descendantCombinator',
 };
+
+// identify unicode escape tokens
+const unicodeReg = /^\\[0-9a-zA-Z]{1,6}(?:\r\n|[ \n\r\t\f])?$/;
+var unicode = {test: (x) => unicodeReg.test(x)};
 %}
 
 # @see: https://www.w3.org/TR/css3-selectors/#w3cselgrammar
@@ -124,8 +128,8 @@ ident -> "-":? nmstart nmchar:*
 name -> nmchar:+
 nmstart -> [_a-zA-Z] | nonascii | escape
 nonascii -> [^\0-\177]
-unicode -> "\\" ( hex hex:? hex:? hex:? hex:? hex:? ) ( "\r\n" | space ):?
-	{% (d) => { return {parsed: String.fromCodePoint(parseInt(collapse(d[1]), 16)), raw: collapse(d)} } %}
+unicode -> %unicode
+	{% (d) => { return {parsed: String.fromCodePoint(parseInt(collapse(d).substr(1), 16)), raw: collapseRaw(d)} } %}
 escape -> unicode
 	| "\\" [^\n\r\f0-9a-fA-F] {% (d) => { return {parsed: d[1], raw: collapseRaw(d)} } %}
 escaped_nl -> "\\" nl
