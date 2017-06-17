@@ -1,7 +1,7 @@
 import { Parser } from 'nearley';
 import grammar from './selector-grammar';
 import Selector from './Selector';
-import PropertyTest from './PropertyTest';
+import TheoreticalProperty from './TheoreticalProperty';
 import CSS from './escape';
 
 /**
@@ -26,7 +26,7 @@ export default {
 
 	// classes
 	Selector,
-	PropertyTest,
+	TheoreticalProperty,
 
 	/**
 	 * Parse a selector or group of selectors.
@@ -104,14 +104,14 @@ export default {
 	 * Compare the two types of selectors/properties for use with a sorting function.
 	 * Comparison is descending by specificity, highest first.
 	 *
-	 * @param  {mixed} a  PropertyTest
-	 * @param  {mixed} b  PropertyTest
+	 * @param  {mixed} a  TheoreticalProperty
+	 * @param  {mixed} b  TheoreticalProperty
 	 * @return {int}   -1, 0, 1
 	 * @see  https://www.w3.org/TR/2009/CR-CSS2-20090908/cascade.html#cascading-order
 	 */
 	compare(a, b) {
-		if (!a instanceof PropertyTest || !b instanceof PropertyTest) {
-			throw new TypeError('Compare terms must be PropertyTest objects.');
+		if (!a instanceof TheoreticalProperty || !b instanceof TheoreticalProperty) {
+			throw new TypeError('Compare terms must be TheoreticalProperty objects.');
 		}
 
 		// get the difference of precedence levels
@@ -140,10 +140,10 @@ export default {
 	},
 
 	/**
-	 * Sort an array of selectors and/or PropertyTest objects.
+	 * Sort an array of selectors and/or TheoreticalProperty objects.
 	 * If selectors have the same precedence and speceficity, the later one will appear first.
 	 *
-	 * @param  {array|...mixed} arr  Selector object, PropertyTest object, or simple object to pass to PropertyTest
+	 * @param  {array|...mixed} arr  Selector object, TheoreticalProperty object, or simple object to pass to TheoreticalProperty
 	 * @return {array}      sorted copy of original array
 	 */
 	sort(arr, ...more) {
@@ -152,10 +152,10 @@ export default {
 			arr = [ arr ].concat(more);
 		}
 
-		// convert all items to PropertyTest objects
+		// convert all items to TheoreticalProperty objects
 		var mapped = arr.map((item, index) => {
 			// preserve index for later recomposition of original array
-			return {index, item: item instanceof PropertyTest ? item : new PropertyTest(item)};
+			return {index, item: item instanceof TheoreticalProperty ? item : new TheoreticalProperty(item)};
 		});
 
 		// sort based on specificity, then order
@@ -174,7 +174,7 @@ export default {
 	 * removes comments, normalizes nth formulas.
 	 *
 	 * This idea could be expanded upon to sort simple selectors and even
-	 * standardize a preference between identical selectors, e.g. :first-child and :nth-child(1).
+	 * standardize a preference between equivalent selectors, e.g. :first-child and :nth-child(1).
 	 *
 	 * @param  {String} selector selector string
 	 * @return {String}          normalized selector string

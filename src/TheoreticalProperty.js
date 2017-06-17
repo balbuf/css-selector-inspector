@@ -3,7 +3,7 @@ import Selector from './Selector';
 const originPrecedence = [ 'user-important', 'author-important', 'author-normal', 'user-normal', 'userAgent' ];
 const stylesheetTypes = [ 'author', 'user', 'userAgent' ];
 
-class PropertyTest {
+class TheoreticalProperty {
 
 	// default props
 	origin = 'inline';
@@ -36,7 +36,7 @@ class PropertyTest {
 		} else if (this.origin === 'inline' && this.selector === null) {
 			return {a: 1, b: 0, c: 0, d: 0};
 		} else {
-			throw new Error('Invalid CSS property test! Likely causes: invalid origin type or incompatible selector/origin combination.');
+			throw new Error('Invalid CSS theoretical property! Likely causes: invalid origin type or incompatible selector/origin combination.');
 		}
 	}
 
@@ -64,4 +64,4 @@ class PropertyTest {
 
 }
 
-export default PropertyTest;
+export default TheoreticalProperty;

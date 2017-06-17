@@ -149,6 +149,11 @@ class Selector {
 
 }
 
+/**
+ * Return the properly-formed namespace string for the given token.
+ * @param  {Object} token selector token
+ * @return {String}       namespace string
+ */
 function namespaceString(token) {
 	if (typeof token.namespace === 'string') {
 		return CSS.escape(token.namespace) + '|';
