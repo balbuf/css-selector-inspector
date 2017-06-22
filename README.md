@@ -16,6 +16,34 @@ based on selector specificity, origin (user or author stylesheet or inline), and
 * Escape raw values to use as CSS [identifiers](https://drafts.csswg.org/cssom/#serialize-an-identifier) or
 [strings](https://drafts.csswg.org/cssom/#serialize-a-string)
 
+**Table of Contents**
+
+* [Usage](#usage)
+* [Objects](#objects)
+  + [`CSI`](#csi)
+    - [Static Methods](#static-methods)
+      * [`parse()`](#parse)
+      * [`isValid()`](#isvalid)
+      * [`normalize()`](#normalize)
+      * [`sort()`](#sort)
+      * [`escape()`](#escape)
+      * [`escapeString()`](#escapestring)
+  + [`Selector`](#selector)
+    - [Properties](#properties)
+      * [`specificity`](#specificity)
+      * [`tokens`](#tokens)
+    - [Methods](#methods)
+      * [`toString()`](#tostring)
+  + [`TheoreticalProperty`](#theoreticalproperty)
+    - [Properties](#properties-1)
+      * [`important`](#important)
+      * [`origin`](#origin)
+      * [`selector`](#selector)
+    - [Methods](#methods-1)
+      * [`getSpecificity()`](#getspecificity)
+      * [`getPrecedenceLevel()`](#getprecedencelevel)
+* [Notes](#notes)
+
 ## Usage
 
 Install CSI into your project:
