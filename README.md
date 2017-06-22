@@ -27,7 +27,124 @@ npm install css-selector-inspector --save
 ```js
 import CSI from 'css-selector-inspector';
 
-const selectors = CSI.parse('');
+console.log(CSI.parse('div.content:last-child > p:not([aria-hidden])::before'));
+/* output:
+[
+  {
+    tokens: [
+      {
+        type: "typeSelector",
+        namespace: null,
+        name: "div",
+        location: 0,
+        raw: "div",
+        specificityType: "d"
+      },
+      {
+        type: "classSelector",
+        name: "content",
+        location: 3,
+        raw: ".content",
+        specificityType: "c"
+      },
+      {
+        type: "pseudoClassSelector",
+        name: "last-child",
+        location: 11,
+        raw: ":last-child",
+        specificityType: "c",
+        expression: null
+      },
+      {
+        type: "childCombinator",
+        location: 22,
+        raw: " > ",
+        specificityType: null
+      },
+      {
+        type: "typeSelector",
+        namespace: null,
+        name: "p",
+        location: 25,
+        raw: "p",
+        specificityType: "d"
+      },
+      {
+        type: "negationSelector",
+        tokens: [
+          {
+            namespace: null,
+            name: "aria-hidden",
+            location: 31,
+            raw: "[aria-hidden]",
+            specificityType: "c",
+            type: "attributePresenceSelector"
+          }
+        ],
+        location: 26,
+        raw: ":not([aria-hidden])",
+        specificityType: null
+      },
+      {
+        name: "before",
+        location: 45,
+        raw: "::before",
+        type: "pseudoElementSelector",
+        specificityType: "d"
+      }
+    ],
+    specificity: {
+      a: 0,
+      b: 0,
+      c: 3,
+      d: 3
+    }
+  }
+]
+ */
+
+console.log(CSI.parse('html, /* comments are ok! */ *|body'));
+/* output:
+[
+  {
+    tokens: [
+      {
+        type: "typeSelector",
+        namespace: null,
+        name: "html",
+        location: 0,
+        raw: "html",
+        specificityType: "d"
+      }
+    ],
+    specificity: {
+      a: 0,
+      b: 0,
+      c: 0,
+      d: 1
+    }
+  },
+  {
+    tokens: [
+      {
+        type: "typeSelector",
+        namespace: {
+          type: "wildcard"
+        },
+        name: "body",
+        location: 29,
+        raw: "body",
+        specificityType: "d"
+      }
+    ],
+    specificity: {
+      a: 0,
+      b: 0,
+      c: 0,
+      d: 1
+    }
+  }
+]
 ```
 
 ## Objects
@@ -97,7 +214,8 @@ _string_ normalized selector string
 Sort selectors and/or theoretical properties based on the cascading precedence order. All arguments are internally
 converted to `TheoreticalProperty` objects for comparison purposes but are returned as the original passed object(s).
 Selectors/properties are sorted in precedence order from highest to lowest, meaning the first item in the resulting
-array is the property that would win out.
+array is the property that would win out. For items that are otherwise equal based on precedence and specificity,
+the item passed latest will appear first in the resulting array.
 
 **Params**
 
@@ -277,3 +395,45 @@ an error will be thrown upon comparison)
 **Default:** `null`
 
 #### Methods
+
+##### `getSpecificity()`
+
+Get the specificity of the selector/property. If the property's origin is a selector, the specificity object
+comes directly from the `Selector` object, otherwise it is always `{a: 1, b: 0, c: 0, d: 0}` for inline styles.
+
+**Returns**
+
+_object_ plain object with properties `a`, `b`, `c`, `d`, based on
+[how specificity is tallied](https://www.w3.org/TR/2009/CR-CSS2-20090908/cascade.html#specificity)
+
+**Throws**
+
+* An error is thrown if the `origin` is invalid or does not match the expected value of `selector`
+
+<br>
+
+##### `getPrecedenceLevel()`
+
+Based on the origin of the property and whether it is `!important`, determine the precendence level.
+A lower value indicates a higher precedence.
+
+**Returns**
+
+_int_ precedence value, lower being higher precedence
+
+**Throws**
+
+* An error is thrown if the origin type is invalid.
+
+## Notes
+
+* This package uses a number methods introduced by ECMAScript 2015 which may not be available in all environments.
+You may need to use a polyfill for the following methods:
+  * [`String.fromCodePoint`](https://github.com/mathiasbynens/String.fromCodePoint)
+  * [`String.prototype.codePointAt`](https://github.com/mathiasbynens/String.prototype.codePointAt)
+  * [`Object.assign`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign#Polyfill)
+* The parsing functionality is built upon [nearley](https://github.com/Hardmath123/nearley), a JS implementation of
+the [Earley Parsing Algorithm](https://en.wikipedia.org/wiki/Earley_parser). I was introduced to nearley and inspired
+to use it for the purposes of CSS selector parsing by [scalpel](https://github.com/gajus/scalpel).
+* After evaluating several CSS selector parsers, my goal was to produce one that could handle any valid selector string
+based on the spec. As such, **please file an issue if you come across any valid selector strings that cannot be parsed!**
