@@ -31,7 +31,7 @@ class TheoreticalProperty {
 	 * @return {object} specificity object with the number of selectors for each component type a,b,c,d
 	 */
 	getSpecificity() {
-		if (stylesheetTypes.includes(this.origin) && this.selector instanceof Selector) {
+		if (stylesheetTypes.indexOf(this.origin) >= 0 && this.selector instanceof Selector) {
 			return this.selector.specificity;
 		} else if (this.origin === 'inline' && this.selector === null) {
 			return {a: 1, b: 0, c: 0, d: 0};
